@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Thu Jan 11 09:06:45 PST 2024
+httpcore-nio-4.4.5.pom>=
+httpcore-nio-4.4.5.jar>=

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata modelVersion="1.1.0">
+  <groupId>top.webBee</groupId>
+  <artifactId>webBee</artifactId>
+  <versioning>
+    <lastUpdated>20240111170644</lastUpdated>
+    <snapshot>
+      <localCopy>true</localCopy>
+    </snapshot>
+    <snapshotVersions>
+      <snapshotVersion>
+        <extension>pom</extension>
+        <value>0.1.1-SNAPSHOT</value>
+        <updated>20240111170644</updated>
+      </snapshotVersion>
+    </snapshotVersions>
+  </versioning>
+  <version>0.1.1-SNAPSHOT</version>
+</metadata>
