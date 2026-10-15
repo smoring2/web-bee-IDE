@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">webBee-core</a> &gt; <a href="index.source.html" class="el_package">org.bee.webBee.utils</a> &gt; <span class="el_source">FileUtil.java</span></div><h1>FileUtil.java</h1><pre class="source lang-java linenums">package org.bee.webBee.utils;
+
+/**
+ * data 2017-05-11   01:35
+ * E-mail   sis.nonacosa@gmail.com
+ *
+ * @author sis.nonacosa
+ */
+
+import me.tongfei.progressbar.ProgressBar;
+import me.tongfei.progressbar.ProgressBarBuilder;
+import me.tongfei.progressbar.ProgressBarStyle;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+
+<span class="nc" id="L25">public final class FileUtil {</span>
+
+    /**
+     * 默认下载线程数
+     */
+<span class="fc" id="L30">    private static int DEFAULT_DOWNLOAD_THREAD_NUM = 20;</span>
+
+
+    /**
+     * 一次读取默认字节
+     */
+<span class="fc" id="L36">    private static byte step[] = new byte[4096];</span>
+
+    /**
+     * 文件下载
+     *
+     * @param originUrl 文件源路径
+     * @param destPath  文件下载目录
+     */
+    private static void download(String originUrl, String destPath) {
+
+
+<span class="nc" id="L47">        String fileName = originUrl.substring(originUrl.lastIndexOf(&quot;/&quot;) + 1);</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (StringUtils.isBlank(fileName)) {</span>
+<span class="nc" id="L49">            return;</span>
+        }
+        try {
+<span class="nc" id="L52">            URL destUrl = new URL(originUrl);</span>
+<span class="nc" id="L53">            URLConnection urlConnection = destUrl.openConnection();</span>
+<span class="nc" id="L54">            InputStream inputStream = urlConnection.getInputStream();</span>
+<span class="nc" id="L55">            OutputStream outputStream = null;</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">            if (destPath.endsWith(&quot;/&quot;)) {</span>
+<span class="nc" id="L57">                destPath = destPath.substring(0, destPath.length() - 1);</span>
+            }
+
+<span class="nc" id="L60">            byte[] buffer = new byte[1024];</span>
+<span class="nc" id="L61">            int readNum = 0;</span>
+
+<span class="nc" id="L63">            String destFile = destPath + File.separator + fileName;</span>
+<span class="nc" id="L64">            outputStream = new FileOutputStream(destFile);</span>
+
+<span class="nc bnc" id="L66" title="All 2 branches missed.">            while ((readNum = inputStream.read(buffer)) != -1) {</span>
+<span class="nc" id="L67">                outputStream.write(buffer, 0, readNum);</span>
+            }
+<span class="nc" id="L69">            inputStream.close();</span>
+<span class="nc" id="L70">            outputStream.close();</span>
+<span class="nc" id="L71">        } catch (IOException e) {</span>
+<span class="nc" id="L72">            e.printStackTrace();</span>
+<span class="nc" id="L73">        }</span>
+
+<span class="nc" id="L75">    }</span>
+
+    /**
+     * 批量下载文件
+     *
+     * @param fileUrls  文件路径集合
+     * @param path      文件目录
+     * @param threadNum 线程数
+     */
+    public static void batchDownloadFile(Set&lt;String&gt; fileUrls, String path, int threadNum) {
+<span class="fc" id="L85">        File destDir = new File(path);</span>
+<span class="pc bpc" id="L86" title="3 of 4 branches missed.">        if (!destDir.isDirectory() || !destDir.exists()) {</span>
+<span class="fc" id="L87">            System.err.println(&quot;下载目录不存在&quot;);</span>
+<span class="fc" id="L88">            return;</span>
+        }
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        threadNum = threadNum &gt; 0 ? threadNum : DEFAULT_DOWNLOAD_THREAD_NUM;</span>
+<span class="nc" id="L91">        ExecutorService executorService = Executors.newFixedThreadPool(threadNum);</span>
+<span class="nc" id="L92">        fileUrls.forEach((url -&gt; {</span>
+<span class="nc" id="L93">            executorService.execute(() -&gt; FileUtil.download(url, path));</span>
+<span class="nc" id="L94">        }));</span>
+        //TODO 等爬虫线程停止后再停止，或至少等待一段时间再停止
+<span class="nc" id="L96">        executorService.shutdown();</span>
+<span class="nc" id="L97">    }</span>
+
+    /**
+     * 批量下载文件
+     *
+     * @param fileUrls 文件路径集合
+     * @param path     文件目录
+     */
+    public static void batchDownloadFile(Set&lt;String&gt; fileUrls, String path) {
+<span class="fc" id="L106">        batchDownloadFile(fileUrls, path, DEFAULT_DOWNLOAD_THREAD_NUM);</span>
+<span class="fc" id="L107">    }</span>
+
+
+    /**
+     * 将json格式字符串写入指定路径的文件中
+     *
+     * @param json json字符串
+     * @param path 待写入文件路径
+     * @param name 文件名
+     */
+    public static void write2Json(String json, String path, String name) throws IOException {
+<span class="nc" id="L118">        File pathFile = new File(path);</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">        if (!pathFile.isDirectory()) {</span>
+<span class="nc" id="L120">            throw new FileNotFoundException();</span>
+        }
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (!pathFile.exists()) {</span>
+<span class="nc" id="L123">            pathFile.mkdirs();</span>
+        }
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (name == null) {</span>
+<span class="nc" id="L126">            name = getDefaultName();</span>
+        }
+<span class="nc" id="L128">        File file = new File(path + &quot;/&quot; + name);</span>
+
+<span class="nc" id="L130">        FileWriter writer = new FileWriter(file, true);</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        if (file.length() == 0) {</span>
+<span class="nc" id="L132">            writer.append(&quot;[&quot;);</span>
+        }
+<span class="nc" id="L134">        writer.append(json + &quot;,&quot;);</span>
+<span class="nc" id="L135">        writer.close();</span>
+<span class="nc" id="L136">    }</span>
+
+    public static void end4Json(String path, String name) throws IOException {
+<span class="nc" id="L139">        File file = new File(path + &quot;/&quot; + name);</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">        if (!file.exists()) {</span>
+<span class="nc" id="L141">            return;</span>
+        }
+<span class="nc" id="L143">        FileWriter writer = new FileWriter(file, true);</span>
+<span class="nc" id="L144">        writer.append(&quot;]&quot;);</span>
+<span class="nc" id="L145">        writer.close();</span>
+<span class="nc" id="L146">    }</span>
+
+
+    private static String getDefaultName() {
+<span class="nc" id="L150">        SimpleDateFormat sdf = new SimpleDateFormat(&quot;yyyy-MM-dd&quot;);</span>
+<span class="nc" id="L151">        return sdf.format(new Date()) + &quot;.json&quot;;</span>
+    }
+
+    public static  synchronized void saveFile(CloseableHttpResponse response, String path, String fileName) {
+
+        try {
+<span class="nc" id="L157">            FileOutputStream outputStream = new FileOutputStream(new File(path + fileName + HttpUtil.getMimeType(response)));</span>
+<span class="nc" id="L158">            InputStream inputStream = response.getEntity().getContent();</span>
+<span class="nc" id="L159">            Double streamLength = (double) response.getEntity().getContentLength();</span>
+<span class="nc" id="L160">            Long readStreamLength = 1L;</span>
+            int counts;
+            //use ProgressBar plug-in  : https://github.com/ctongfei/progressbar
+<span class="nc" id="L163">            ProgressBar pb = new ProgressBarBuilder()</span>
+<span class="nc" id="L164">                    .setTaskName(fileName)</span>
+<span class="nc" id="L165">                    .setInitialMax(Math.round(streamLength))</span>
+<span class="nc" id="L166">                    .setStyle(ProgressBarStyle.ASCII)</span>
+<span class="nc" id="L167">                    .build(); // name, initial max    ProgressBarStyle.ASCII</span>
+
+<span class="nc bnc" id="L169" title="All 2 branches missed.">            while ((counts = inputStream.read(step)) != -1) {</span>
+<span class="nc" id="L170">                outputStream.write(step, 0, counts);</span>
+<span class="nc" id="L171">                readStreamLength += counts;</span>
+<span class="nc" id="L172">                pb.stepBy(counts);</span>
+<span class="nc" id="L173">                pb.setExtraMessage(&quot;下载中...&quot;);</span>
+//                System.out.print(&quot;\r &quot; + fileName + &quot;已经下载%&quot; + Math.floor((readStreamLength / streamLength) * 100));
+            }
+<span class="nc" id="L176">            pb.close(); // stops the progress bar</span>
+<span class="nc" id="L177">            outputStream.flush();</span>
+<span class="nc" id="L178">            outputStream.close();</span>
+
+<span class="nc" id="L180">            System.out.println(fileName + &quot;下载完成!&quot;);</span>
+
+<span class="nc" id="L182">        } catch (FileNotFoundException e) {</span>
+<span class="nc" id="L183">            e.printStackTrace();</span>
+<span class="nc" id="L184">        } catch (IOException e) {</span>
+<span class="nc" id="L185">            e.printStackTrace();</span>
+<span class="nc" id="L186">        }</span>
+<span class="nc" id="L187">    }</span>
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
